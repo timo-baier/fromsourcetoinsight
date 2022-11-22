@@ -1,0 +1,388 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "fromsourcetoinsight"
+		},
+		"adls_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'adls'"
+		},
+		"passantenzaehlung_schoenbornstrasse_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://opendata.wuerzburg.de/api/records/1.0/search/?dataset=passantenzaehlung_schoenbornstrasse&q="
+		},
+		"adls_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://tbintelligence.dfs.core.windows.net/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/passantenzaehlung_schoenbornstrasse')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('passantenzaehlung_schoenbornstrasse_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": false,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/adls')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('adls_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('adls_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/api_passantenzaehlung_schoenbornstrasse')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "passantenzaehlung_schoenbornstrasse",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"nhits": {
+							"type": "integer"
+						},
+						"parameters": {
+							"type": "object",
+							"properties": {
+								"dataset": {
+									"type": "string"
+								},
+								"rows": {
+									"type": "integer"
+								},
+								"start": {
+									"type": "integer"
+								},
+								"format": {
+									"type": "string"
+								},
+								"timezone": {
+									"type": "string"
+								}
+							}
+						},
+						"records": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"datasetid": {
+										"type": "string"
+									},
+									"recordid": {
+										"type": "string"
+									},
+									"fields": {
+										"type": "object",
+										"properties": {
+											"unverified": {
+												"type": "integer"
+											},
+											"details": {
+												"type": "string"
+											},
+											"timestamp": {
+												"type": "string"
+											},
+											"weather_condition": {
+												"type": "string"
+											},
+											"temperature": {
+												"type": "number"
+											},
+											"pedestrians_count": {
+												"type": "integer"
+											}
+										}
+									},
+									"record_timestamp": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/passantenzaehlung_schoenbornstrasse')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/adls')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "adls",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FILENAME": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FILENAME",
+							"type": "Expression"
+						},
+						"fileSystem": "pedestrians"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/adls')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/api_adls_pedestrians')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "api_adls_pedestrians",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "FlattenHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['nhits']"
+										},
+										"sink": {
+											"name": "nhits"
+										}
+									},
+									{
+										"source": {
+											"path": "$['parameters']['dataset']"
+										},
+										"sink": {
+											"name": "dataset"
+										}
+									},
+									{
+										"source": {
+											"path": "$['parameters']['rows']"
+										},
+										"sink": {
+											"name": "rows"
+										}
+									},
+									{
+										"source": {
+											"path": "$['parameters']['start']"
+										},
+										"sink": {
+											"name": "start"
+										}
+									},
+									{
+										"source": {
+											"path": "$['parameters']['format']"
+										},
+										"sink": {
+											"name": "format"
+										}
+									},
+									{
+										"source": {
+											"path": "$['parameters']['timezone']"
+										},
+										"sink": {
+											"name": "timezone"
+										}
+									},
+									{
+										"source": {
+											"path": "[['datasetid']"
+										},
+										"sink": {
+											"name": "datasetid"
+										}
+									},
+									{
+										"source": {
+											"path": "[['recordid']"
+										},
+										"sink": {
+											"name": "recordid"
+										}
+									},
+									{
+										"source": {
+											"path": "[['fields']['unverified']"
+										},
+										"sink": {
+											"name": "unverified"
+										}
+									},
+									{
+										"source": {
+											"path": "[['fields']['details']"
+										},
+										"sink": {
+											"name": "details"
+										}
+									},
+									{
+										"source": {
+											"path": "[['fields']['timestamp']"
+										},
+										"sink": {
+											"name": "timestamp"
+										}
+									},
+									{
+										"source": {
+											"path": "[['fields']['weather_condition']"
+										},
+										"sink": {
+											"name": "weather_condition"
+										}
+									},
+									{
+										"source": {
+											"path": "[['fields']['temperature']"
+										},
+										"sink": {
+											"name": "temperature"
+										}
+									},
+									{
+										"source": {
+											"path": "[['fields']['pedestrians_count']"
+										},
+										"sink": {
+											"name": "pedestrians_count"
+										}
+									},
+									{
+										"source": {
+											"path": "[['record_timestamp']"
+										},
+										"sink": {
+											"name": "record_timestamp"
+										}
+									}
+								],
+								"collectionReference": "$['records']",
+								"mapComplexValuesToString": false
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "api_passantenzaehlung_schoenbornstrasse",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "adls",
+								"type": "DatasetReference",
+								"parameters": {
+									"FILENAME": {
+										"value": "@concat(formatDateTime(pipeline().parameters.TIMESTAMP,'yyyyMMdd'),'_pedestrians.parquet')",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"TIMESTAMP": {
+						"type": "string",
+						"defaultValue": "utcnow()"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/api_passantenzaehlung_schoenbornstrasse')]",
+				"[concat(variables('factoryId'), '/datasets/adls')]"
+			]
+		}
+	]
+}

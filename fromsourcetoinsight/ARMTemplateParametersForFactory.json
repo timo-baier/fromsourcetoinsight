@@ -1,0 +1,18 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "fromsourcetoinsight"
+		},
+		"adls_accountKey": {
+			"value": ""
+		},
+		"passantenzaehlung_schoenbornstrasse_properties_typeProperties_url": {
+			"value": "https://opendata.wuerzburg.de/api/records/1.0/search/?dataset=passantenzaehlung_schoenbornstrasse&q="
+		},
+		"adls_properties_typeProperties_url": {
+			"value": "https://tbintelligence.dfs.core.windows.net/"
+		}
+	}
+}
