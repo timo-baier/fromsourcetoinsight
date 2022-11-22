@@ -176,7 +176,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"FILENAME": {
-								"value": "@concat(formatDateTime(pipeline().parameters.TIMESTAMP,'yyyyMMdd'),'_pedestrians.parquet')",
+								"value": "@concat(formatDateTime(utcNow(),'yyyyMMdd'),'_pedestrians.parquet')",
 								"type": "Expression"
 							}
 						}
@@ -184,12 +184,6 @@
 				]
 			}
 		],
-		"parameters": {
-			"TIMESTAMP": {
-				"type": "string",
-				"defaultValue": "utcnow()"
-			}
-		},
 		"annotations": []
 	}
 }

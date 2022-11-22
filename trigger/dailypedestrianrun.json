@@ -1,0 +1,24 @@
+{
+	"name": "dailypedestrianrun",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "api_adls_pedestrians",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2022-11-22T23:45:00",
+				"timeZone": "W. Europe Standard Time"
+			}
+		}
+	}
+}
