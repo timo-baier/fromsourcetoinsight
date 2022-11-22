@@ -1,0 +1,12 @@
+{
+	"name": "passantenzaehlung_schoenbornstrasse",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "https://opendata.wuerzburg.de/api/records/1.0/search/?dataset=passantenzaehlung_schoenbornstrasse&q=",
+			"enableServerCertificateValidation": false,
+			"authenticationType": "Anonymous"
+		}
+	}
+}
