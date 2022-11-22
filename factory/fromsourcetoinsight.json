@@ -1,0 +1,9 @@
+{
+	"name": "fromsourcetoinsight",
+	"location": "germanywestcentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "8072379a-253e-4a4f-871e-a6cdd38a7b88",
+		"tenantId": "22ace720-498a-42b1-9f98-e8b4a5baaa9d"
+	}
+}
