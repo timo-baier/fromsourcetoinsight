@@ -359,7 +359,7 @@
 								"type": "DatasetReference",
 								"parameters": {
 									"FILENAME": {
-										"value": "@concat(formatDateTime(pipeline().parameters.TIMESTAMP,'yyyyMMdd'),'_pedestrians.parquet')",
+										"value": "@concat(formatDateTime(utcNow(),'yyyyMMdd'),'_pedestrians.parquet')",
 										"type": "Expression"
 									}
 								}
@@ -371,17 +371,42 @@
 					"elapsedTimeMetric": {},
 					"cancelAfter": {}
 				},
-				"parameters": {
-					"TIMESTAMP": {
-						"type": "string",
-						"defaultValue": "utcnow()"
-					}
-				},
 				"annotations": []
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/api_passantenzaehlung_schoenbornstrasse')]",
 				"[concat(variables('factoryId'), '/datasets/adls')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dailypedestrianrun')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "api_adls_pedestrians",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2022-11-22T23:45:00",
+						"timeZone": "W. Europe Standard Time",
+						"schedule": {}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/api_adls_pedestrians')]"
 			]
 		}
 	]
