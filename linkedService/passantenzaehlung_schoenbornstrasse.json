@@ -4,7 +4,7 @@
 		"annotations": [],
 		"type": "HttpServer",
 		"typeProperties": {
-			"url": "https://opendata.wuerzburg.de/api/records/1.0/search/?dataset=passantenzaehlung_schoenbornstrasse&q=",
+			"url": "https://opendata.wuerzburg.de/api/records/1.0/search/?dataset=passantenzaehlung_schoenbornstrasse&q=&rows=24",
 			"enableServerCertificateValidation": false,
 			"authenticationType": "Anonymous"
 		}
