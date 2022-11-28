@@ -11,13 +11,13 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'adls'"
 		},
-		"passantenzaehlung_schoenbornstrasse_properties_typeProperties_url": {
-			"type": "string",
-			"defaultValue": "https://opendata.wuerzburg.de/api/records/1.0/search/?dataset=passantenzaehlung_schoenbornstrasse&q="
-		},
 		"adls_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://tbintelligence.dfs.core.windows.net/"
+		},
+		"passantenzaehlung_schoenbornstrasse_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://opendata.wuerzburg.de/api/records/1.0/search/?dataset=passantenzaehlung_schoenbornstrasse&q=&rows=24"
 		}
 	},
 	"variables": {
@@ -225,19 +225,37 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/passantenzaehlung_schoenbornstrasse')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"name": "[concat(parameters('factoryName'), '/adls')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
+				"linkedServiceName": {
+					"referenceName": "adls",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FILENAME": {
+						"type": "string"
+					}
+				},
 				"annotations": [],
-				"type": "HttpServer",
+				"type": "Parquet",
 				"typeProperties": {
-					"url": "[parameters('passantenzaehlung_schoenbornstrasse_properties_typeProperties_url')]",
-					"enableServerCertificateValidation": false,
-					"authenticationType": "Anonymous"
-				}
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FILENAME",
+							"type": "Expression"
+						},
+						"fileSystem": "pedestrians"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/adls')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/api_passantenzaehlung_schoenbornstrasse')]",
@@ -346,37 +364,19 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/adls')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
+			"name": "[concat(parameters('factoryName'), '/passantenzaehlung_schoenbornstrasse')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"linkedServiceName": {
-					"referenceName": "adls",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"FILENAME": {
-						"type": "string"
-					}
-				},
 				"annotations": [],
-				"type": "Parquet",
+				"type": "HttpServer",
 				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"fileName": {
-							"value": "@dataset().FILENAME",
-							"type": "Expression"
-						},
-						"fileSystem": "pedestrians"
-					},
-					"compressionCodec": "snappy"
-				},
-				"schema": []
+					"url": "[parameters('passantenzaehlung_schoenbornstrasse_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": false,
+					"authenticationType": "Anonymous"
+				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/adls')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/dailypedestrianrun')]",
@@ -400,8 +400,7 @@
 						"frequency": "Day",
 						"interval": 1,
 						"startTime": "2022-11-22T23:45:00",
-						"timeZone": "W. Europe Standard Time",
-						"schedule": {}
+						"timeZone": "W. Europe Standard Time"
 					}
 				}
 			},
